@@ -1,0 +1,84 @@
+<!-- Created by Erion Nezha — © 2026 All rights reserved -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚌 Simple Bus Reservation System — Web Port</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0b0f14;color:#e6e6e6;font-family:'Consolas','Courier New',monospace;min-height:100vh;display:flex;flex-direction:column}
+header.top{background:linear-gradient(135deg,#101820,#1b2a3a);padding:18px 20px;text-align:center;border-bottom:2px solid #00d4ff33}
+header.top h1{font-size:1.25rem;color:#fff}
+header.top p{color:#9fb3c8;font-size:.82rem;margin-top:6px}
+.wrap{flex:1;max-width:900px;width:100%;margin:0 auto;padding:18px;display:flex;flex-direction:column}
+.term{background:#05070b;border:1px solid #00d4ff33;border-radius:10px;padding:16px;height:60vh;overflow-y:auto;white-space:pre-wrap;font-size:.92rem;line-height:1.6;color:#c8ffb0}
+.inrow{display:flex;align-items:center;gap:8px;margin-top:10px;background:#05070b;border:1px solid #00d4ff55;border-radius:8px;padding:10px 14px}
+.inrow .prompt{color:#00d4ff;font-weight:700}
+.inrow input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:inherit;font-size:.95rem}
+footer{text-align:center;padding:14px;color:#5c6b7f;font-size:.85rem;border-top:1px solid #ffffff10}
+footer strong{color:#9fb3c8}
+</style>
+</head>
+<body>
+<header class="top"><h1>🚌 Simple Bus Reservation System</h1><p>Web port of SBRSC.cpp — install buses, reserve from 32 seats, view the seat map.</p></header>
+<div class="wrap"><div class="term" id="term"></div>
+<div class="inrow"><span class="prompt">&rsaquo;</span><input id="inp" autocomplete="off" spellcheck="false" placeholder="Type here and press Enter…"></div></div>
+<footer>Krijuar nga <strong>Erion Nezha</strong> — © 2026</footer>
+<script>
+const termEl=document.getElementById('term'),inp=document.getElementById('inp');
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function print(t){termEl.innerHTML+=esc(t)+'\n';termEl.scrollTop=termEl.scrollHeight;}
+function ask(q){return new Promise(function(res){print(q);inp.focus();function h(e){if(e.key==='Enter'){inp.removeEventListener('keydown',h);var v=inp.value;inp.value='';print('> '+v);res(v.trim());}}inp.addEventListener('keydown',h);});}
+function pause(){return new Promise(function(r){setTimeout(r,250);});}
+window.addEventListener('load',function(){main();});
+
+var buses=[];
+function findBus(n){return buses.find(function(b){return b.busn===n;});}
+async function main(){
+  print('\t\t\t=== Simple Bus Reservation System (web port of SBRSC.cpp) ===');
+  while(true){
+    print('\n\t\t\t1.Install\n\t\t\t2.Reservation\n\t\t\t3.Show\n\t\t\t4.Buses Available\n\t\t\t5.Exit');
+    var ch=await ask('\nEnter your choice: ');
+    if(ch==='1'){
+      var b={busn:await ask('Enter bus no: '),driver:await ask("Enter Driver's name: "),
+             arrival:await ask('Arrival time: '),depart:await ask('Departure: '),
+             from:await ask('From: '),to:await ask('To: '),seats:[]};
+      for(var i=0;i<32;i++)b.seats.push('Empty');
+      if(findBus(b.busn)){print('Bus no. already exists!');continue;}
+      buses.push(b);
+      print('Bus '+b.busn+' installed successfully (32 seats).');
+    }else if(ch==='2'){
+      var bn=await ask('Enter bus no: ');
+      var b=findBus(bn);
+      if(!b){print('Enter correct bus no.');continue;}
+      var sn=parseInt(await ask('Seat Number (1-32): '),10);
+      if(isNaN(sn)||sn<1||sn>32){print('\nThere are only 32 seats available in this bus.');continue;}
+      if(b.seats[sn-1]!=='Empty'){print('The seat no. is already reserved.');continue;}
+      var nm=await ask("Enter passanger's name: ");
+      b.seats[sn-1]=nm;
+      print('Seat '+sn+' reserved for '+nm+' on bus '+bn+'.');
+    }else if(ch==='3'){
+      var bn=await ask('Enter bus no: ');
+      var b=findBus(bn);
+      if(!b){print('Enter correct bus no:');continue;}
+      print('Bus no: \t'+b.busn+'\nDriver: \t'+b.driver+'\nArrival: \t'+b.arrival+'\nDeparture: '+b.depart+'\nFrom: \t'+b.from+'\nTo: \t'+b.to);
+      print('--- Seat map (32 seats) ---');
+      var row='';
+      for(var i=0;i<32;i++){
+        row+=(i+1)+'.'+(b.seats[i]==='Empty'?'[ ]':'[X]')+'  ';
+        if((i+1)%8===0){print(row);row='';}
+      }
+      print('(X = reserved)');
+    }else if(ch==='4'){
+      if(!buses.length){print('No buses available.');continue;}
+      buses.forEach(function(b){
+        var free=b.seats.filter(function(s){return s==='Empty';}).length;
+        print(b.busn+' | '+b.from+' -> '+b.to+' | Driver: '+b.driver+' | Free seats: '+free+'/32');});
+    }else if(ch==='5'){print('Exiting...');break;
+    }else{print('Invalid choice.');}
+  }
+}
+</script>
+</body>
+</html>
